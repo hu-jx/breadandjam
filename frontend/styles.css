@@ -388,3 +388,16 @@ section[data-testid="stSidebar"] .stButton button:hover {
 .spacer-md {
     height: 2rem;
 }
+
+.image-counter {
+    text-align: right;
+    color: black;
+    font-size: 1.5rem;
+    font-weight: 500;
+    padding-top: 0.6rem;
+}
+
+.st-key-predict_square [data-testid="stCaptionContainer"] {
+    color: black !important;
+    font-weight: bold;
+}
