@@ -1,15 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
-from preprocessing import collate_fn
-
-def create_test_loader(dataset: Dataset):
-    test_loader = DataLoader(dataset=dataset, 
-                              batch_size=64, 
-                              collate_fn=collate_fn, 
-                              num_workers=2, 
-                              shuffle=False)
-    return test_loader
+from torch.utils.data import DataLoader
 
 def evaluate_model(model: nn.Module, test_loader: DataLoader):
     if torch.cuda.is_available():
@@ -23,9 +14,11 @@ def evaluate_model(model: nn.Module, test_loader: DataLoader):
 
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
-        for i, [test_data, labels] in enumerate(test_loader):
+        for i, [pixel_values, labels] in enumerate(test_loader):
             print("batch", i)
-            outputs = model(test_data)
+            if torch.cuda.is_available(): 
+                pixel_values, labels = pixel_values.cuda(), labels.cuda()
+            outputs = model(pixel_values)
             loss = criterion(outputs, labels)
 
             #loss function
