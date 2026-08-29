@@ -14,11 +14,12 @@ def evaluate_model(model: nn.Module, test_loader: DataLoader):
 
     criterion = nn.CrossEntropyLoss()
     with torch.no_grad():
-        for i, [pixel_values, labels] in enumerate(test_loader):
+        for i, [pixel_dict, labels] in enumerate(test_loader):
             print("batch", i)
             if torch.cuda.is_available(): 
-                pixel_values, labels = pixel_values.cuda(), labels.cuda()
-            outputs = model(pixel_values)
+                pixel_dict = {k: v.cuda() for k, v in pixel_dict.items()}
+                labels = labels.cuda()
+            outputs = model(pixel_dict)
             loss = criterion(outputs, labels)
 
             #loss function

@@ -69,12 +69,13 @@ def main():
         model.train()
         total_loss = 0 
         print("BEFORE INNER LOOP AT", epoch)
-        for i, [pixel_values, labels] in enumerate(train_loader):
+        for i, [pixel_dict, labels] in enumerate(train_loader):
             print("batch", i)
             if torch.cuda.is_available(): 
-                pixel_values, labels = pixel_values.cuda(), labels.cuda()
+                pixel_dict = {k: v.cuda() for k, v in pixel_dict.items()}
+                labels = labels.cuda()
 
-            outputs = model(pixel_values) #predict
+            outputs = model(pixel_dict) #predict
             loss = criterion(outputs, labels) #error / likelihood of wrong
             loss.backward() #accumulate gradients
             optimizer.step() #adjust model weights
