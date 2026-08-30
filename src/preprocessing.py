@@ -34,7 +34,8 @@ class Preprocessing:
         class_name = CLASSES[class_index]
         return LABELS[class_name]
 
-    def collate_fn(self, batch):
+    @staticmethod
+    def collate_fn(batch):
         """Collates pixels and labels for a batch into a singular dictionary (for separate feature branches)
         and their corresponding labels -> Fed into FusionModel for feature extraction"""
         branch_names = batch[0][0].keys() #same branch names for all
