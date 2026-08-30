@@ -30,7 +30,7 @@ class Preprocessing:
 
         #takes in the img, and a list of methods to execute,  
         img = img.convert("RGB")
-        #put dda here -> done for a singular image before putting through branches' trf
+        # (done!) put dda here -> done for a singular image before putting through branches' trf 
         if train:
             img = self.augment(img)
         pixels = {}

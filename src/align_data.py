@@ -1,16 +1,22 @@
 import os, io
 from PIL import Image
 import torch
-from diffusers import AutoencoderKL
 import torchvision.transforms as T
-import kagglehub
 
-vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
-vae.eval()
 to_tensor, to_pil = T.ToTensor(), T.ToPILImage()
+_vae = None
+
+def get_vae():
+    global _vae
+    if _vae is None:
+        from diffusers import AutoencoderKL
+        _vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
+        _vae.eval()
+    return _vae
 
 @torch.no_grad()
 def vae_reconstruct(img):
+    vae = get_vae()
     x = to_tensor(img).unsqueeze(0) * 2 - 1
     latent = vae.encode(x).latent_dist.mode()
     recon = (vae.decode(latent).sample.clamp(-1, 1) + 1) / 2
@@ -31,7 +37,11 @@ def align_folder(src_dir, dst_dir, apply_vae):
         img = freq_align(img)
         img.save(os.path.join(dst_dir, fname))
 
+def align_all_data(raw_path, aligned_train_path="cifake_aligned/train"):
+    align_folder(f"{raw_path}/train/REAL", f"{aligned_train_path}/REAL", apply_vae=True)
+    align_folder(f"{raw_path}/train/FAKE", f"{aligned_train_path}/FAKE", apply_vae=False)
+
 if __name__ == '__main__':
+    import kagglehub
     raw_path = kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images")
-    align_folder(f"{raw_path}/train/REAL", "cifake_aligned/train/REAL", apply_vae=True)
-    align_folder(f"{raw_path}/train/FAKE", "cifake_aligned/train/FAKE", apply_vae=False)
+    align_all_data(raw_path)
