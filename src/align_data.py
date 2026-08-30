@@ -9,7 +9,7 @@ _vae = None
 def get_vae():
     global _vae
     if _vae is None:
-        from diffusers import AutoencoderKL
+        from diffusers.models.autoencoders.autoencoder_kl import AutoencoderKL
         _vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
         _vae.eval()
     return _vae

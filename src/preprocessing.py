@@ -52,5 +52,5 @@ class Preprocessing:
         #get pixel values
         for branch in branch_names:
             pixel_dict[branch] = torch.stack([b[0][branch] for b in batch])
-        labels = torch.tensor([b[LABEL_INDEX] for b in batch], dtype=torch.long)
+        labels = torch.tensor([b[LABEL_INDEX] for b in batch], dtype=torch.float32)
         return pixel_dict, labels

@@ -17,7 +17,7 @@ class FusionModel(nn.Module):
         feats = []
         for branch in self.branches:
             if not (isinstance(branch, Branch)):
-                raise ValueError('Incompatible type in branch')
+                raise TypeError('Expected instance of Branch but got ', type(branch))
             px = branch(pixel_dict[branch.get_name()])
             feats.append(px)
         combined = torch.cat(feats, dim=1)

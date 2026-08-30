@@ -3,8 +3,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from clip_feature import CLIPFeatureBranch
+from branch import Branch
+from utils.utils import to_device
 from fusion_model import FusionModel
-from eval import evaluate_model
+from eval import check_entropy_loss, run_inference
 from fetch_data import DataFetch
 from preprocessing import Preprocessing
 from transformers import AutoModelForZeroShotImageClassification, AutoProcessor
@@ -12,8 +14,10 @@ from frequency_branch import FrequencyBranch
 
 NUM_WORKERS = 0
 BATCH_SIZE = 64
-NUM_TRAIN_SAMPLES = 1000 #number of images for training
-NUM_VALIDATION_SAMPLES = 200 #number of images for validation
+NUM_TRAIN_SAMPLES = 100 #number of images for training
+NUM_TEST_SAMPLES = 20
+NUM_VALIDATION_SAMPLES = 20 #number of images for validation
+CHECKPOINT_PATH = "checkpoint.pt"
 
 def set_up_vit():
     print('loading clip_vit')
@@ -26,8 +30,20 @@ def set_up_vit():
     print('finish loading clip_vit of type ', type(clip_vit))
     return [clip_vit, image_processor]
 
+def save_checkpoint(model: FusionModel, path: str):
+    branch_dims = {}
+    for branch in model.branches:
+        if not (isinstance(branch, Branch)):
+            raise TypeError('Expected instance of Branch but got ', type(branch))
+        branch_dims[branch.get_name()] = branch.get_dim()
 
-def main():
+    torch.save({
+        # extract feature branch parameters with .state_dict()
+        'head_state': model.classifier_head.state_dict(),
+        'branch_dims': branch_dims,
+    }, path)
+
+def train():
     #CLIP ViT set-up
     clip_vit, vit_image_processor = set_up_vit()
 
@@ -36,7 +52,7 @@ def main():
                 FrequencyBranch(output_dim=256)]
     preprocessing = Preprocessing(branches=branches)
     data_fetcher = DataFetch(preprocessing=preprocessing)
-    model = FusionModel(branches=branches, num_classes = 2)
+    model = FusionModel(branches=branches, num_classes = 1)
 
     #create data loaders
     train_data = data_fetcher.fetch_data(num_samples=NUM_TRAIN_SAMPLES,train=True)
@@ -46,15 +62,23 @@ def main():
                               collate_fn=preprocessing.collate_fn, 
                               num_workers=NUM_WORKERS, 
                               shuffle=True)
-    
     print("RIGHT AFTER TRAIN LOADER")
-    validation_set = data_fetcher.fetch_data(train= False, num_samples=NUM_VALIDATION_SAMPLES)
-    test_loader = DataLoader(dataset=validation_set, 
+
+    val_data = data_fetcher.fetch_data(num_samples=NUM_VALIDATION_SAMPLES, val=True)
+    val_loader = DataLoader(dataset=val_data, 
                               batch_size=BATCH_SIZE, 
                               collate_fn=preprocessing.collate_fn, 
                               num_workers=NUM_WORKERS, 
                               shuffle=False)
-    print("RIGHT AFTER test loader")
+    print("RIGHT AFTER val loader")
+
+    print("TEST LOADER")
+    test_data = data_fetcher.fetch_data(num_samples=NUM_TEST_SAMPLES, test=True)
+    test_loader = DataLoader(dataset=val_data, 
+                              batch_size=BATCH_SIZE, 
+                              collate_fn=preprocessing.collate_fn, 
+                              num_workers=NUM_WORKERS, 
+                              shuffle=False)
     
     #create training reqs 
     optimizer = torch.optim.Adam(
@@ -62,20 +86,23 @@ def main():
         lr=1e-4  # smaller LR than training from scratch, since we're fine-tuning pretrained weights
     )
     print("RIGHT AFTER optimizer")
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.BCEWithLogitsLoss()
     print("RIGHT AFTER criterion")
 
+    #create loss lists
+    loss_per_epoch_val = []
+    loss_per_epoch_train = []
+
     #feature extraction & training loop
-    #TODO: Implement a EarlyStopper instead of fixed epoch, with a max EPOCH value 
     for epoch in range(5): 
         model.train()
         total_loss = 0 
         print("BEFORE INNER LOOP AT", epoch)
         for i, [pixel_dict, labels] in enumerate(train_loader):
             print("batch", i)
-            if torch.cuda.is_available(): 
-                pixel_dict = {k: v.cuda() for k, v in pixel_dict.items()}
-                labels = labels.cuda()
+            #refactor 
+            labels = labels.unsqueeze(1).float() 
+            pixel_dict, labels = to_device(pixel_dict, labels)
 
             outputs = model(pixel_dict) #predict
             loss = criterion(outputs, labels) #error / likelihood of wrong
@@ -86,8 +113,18 @@ def main():
             optimizer.zero_grad() #reset grad acc
             print("END for  batch with total loss ", total_loss)
 
-        print(f"Epoch {epoch+1}, train loss: {total_loss/len(train_loader):.4f}")
-        evaluate_model(model, test_loader=test_loader)
+        avg_loss = total_loss/len(train_loader)
+        print(f"Epoch {epoch+1}, train loss: {avg_loss:.4f}")
+        loss_per_epoch_train.append(total_loss)
+        avg_loss_val = check_entropy_loss(model, val_loader=val_loader)
+        loss_per_epoch_val.append(avg_loss_val)
+    
+    print("Validation loss per epoch:", loss_per_epoch_val, 
+          "Training loss per epoch:", loss_per_epoch_train)
+    roc_auc, cm = run_inference(model=model, test_loader=test_loader)
+    print("ROC_AUC_clean:" ,roc_auc)
+    print("Confusion matrix", cm)
+    save_checkpoint(model, path = CHECKPOINT_PATH) #save model to a checkpoint path
 
 if __name__ == '__main__':
-    main()
+    train()
