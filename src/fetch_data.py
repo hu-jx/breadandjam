@@ -1,3 +1,4 @@
+import os
 from functools import partial
 import kagglehub
 from preprocessing import Preprocessing
@@ -7,6 +8,16 @@ from torch import randperm
 
 path = kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images")
 ALIGNED_TRAIN_PATH = "cifake_aligned/train"
+
+def ensure_aligned_dataset():
+    if os.path.isdir(f"{ALIGNED_TRAIN_PATH}/REAL") and os.path.isdir(f"{ALIGNED_TRAIN_PATH}/FAKE"):
+        return
+    
+    from align_data import align_all_data
+    print("aligned dataset not found, building it now (one-time)")
+    align_all_data(path, ALIGNED_TRAIN_PATH)
+
+ensure_aligned_dataset()
 
 class DataFetch:
     def __init__(self, preprocessing: Preprocessing):
@@ -23,7 +34,7 @@ class DataFetch:
         num_samples:int = Number of samples to extract.
         train:bool = If the dataset to be returned is train dataset or not"""
         if (train):
-            dataset_path = ALIGNED_TRAIN_PATH if train else f"{path}/test"
+            dataset_path = ALIGNED_TRAIN_PATH 
         else:
             dataset_path = f"{path}/test"
         dataset = datasets.ImageFolder(root=dataset_path, 
