@@ -1,9 +1,24 @@
 from collections import defaultdict
+import os
+from functools import partial
 import kagglehub
+from wildfake_dataset import WildFakeDataset
 from preprocessing import Preprocessing
 from torchvision import datasets
 from torch.utils.data import Dataset, Subset
-from wildfake_dataset import WildFakeDataset
+
+path = kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images")
+ALIGNED_TRAIN_PATH = "cifake_aligned/train"
+
+def ensure_aligned_dataset():
+    if os.path.isdir(f"{ALIGNED_TRAIN_PATH}/REAL") and os.path.isdir(f"{ALIGNED_TRAIN_PATH}/FAKE"):
+        return
+    
+    from align_data import align_all_data
+    print("aligned dataset not found, building it now (one-time)")
+    align_all_data(path, ALIGNED_TRAIN_PATH)
+
+ensure_aligned_dataset()
 
 PATH = kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images")
 class DataFetch:
@@ -28,25 +43,23 @@ class DataFetch:
         One image is transformed at a time as this is loaded into the DataLoader
         num_samples:int = Number of samples to extract.
         train:bool = If the dataset to be returned is train dataset or not"""
-        if (train or test):
-            if train:
-                dataset_path = f"{PATH}/train"
-            else:
-                dataset_path = f"{PATH}/test"
-
-            dataset = datasets.ImageFolder(root=dataset_path, 
-                                    transform=self.preprocessing.full_transform, 
-                                    target_transform= self.preprocessing.add_label)
-            return self.get_subset(dataset, num_samples=num_samples)
+        if (train):
+            dataset_path = ALIGNED_TRAIN_PATH 
         elif (val):
             dataset = WildFakeDataset(num_samples = num_samples, 
                                       real_dir= f"{PATH}/test/REAL", 
                                       fake_dir=f"{PATH}/test/FAKE", 
                                       transform=self.preprocessing.full_transform)
             if not (dataset.implemented):
-                return self.fetch_data(num_samples=num_samples, test=True)
-            return dataset
-        
+                return self.fetch_data(num_samples=num_samples, test=True)     
+        elif (test):
+            dataset_path = f"{path}/test"
+            dataset = datasets.ImageFolder(root=dataset_path, 
+                                    transform=partial(self.preprocessing.full_transform, 
+                                                      train=train), 
+                                    target_transform= self.preprocessing.add_label)
+            return self.get_subset(dataset, num_samples=num_samples)
+           
         raise Exception('Type of dataset not specified.')
 
         
