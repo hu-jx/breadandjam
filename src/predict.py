@@ -52,7 +52,7 @@ def run_batch(model: FusionModel, preprocessing: Preprocessing, device, image_pa
             try:
                 img = Image.open(path)
                 img = img.convert('RGB')
-                samples.append(preprocessing.full_transform(img))
+                samples.append(preprocessing.full_transform(img, False))
                 valid_paths.append(path)
             except Exception as e:
                 print(f"Skipping {path}: {e}")
