@@ -1,3 +1,4 @@
+from functools import partial
 import kagglehub
 from preprocessing import Preprocessing
 from torchvision import datasets
@@ -5,6 +6,7 @@ from torch.utils.data import Dataset, Subset
 from torch import randperm
 
 path = kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images")
+ALIGNED_TRAIN_PATH = "cifake_aligned/train"
 
 class DataFetch:
     def __init__(self, preprocessing: Preprocessing):
@@ -21,10 +23,11 @@ class DataFetch:
         num_samples:int = Number of samples to extract.
         train:bool = If the dataset to be returned is train dataset or not"""
         if (train):
-            dataset_path = f"{path}/train"
+            dataset_path = ALIGNED_TRAIN_PATH if train else f"{path}/test"
         else:
             dataset_path = f"{path}/test"
         dataset = datasets.ImageFolder(root=dataset_path, 
-                                    transform=self.preprocessing.full_transform, 
+                                    transform=partial(self.preprocessing.full_transform, 
+                                                      train=train), 
                                     target_transform= self.preprocessing.add_label)
         return self.get_subset(dataset, num_samples=num_samples)

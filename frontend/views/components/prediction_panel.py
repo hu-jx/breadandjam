@@ -1,5 +1,4 @@
 import streamlit as st
-from services.detector import make_heatmap
 from state import uploads as uploads_state
 from views.helpers import render as render_template
 
@@ -15,14 +14,7 @@ def render():
         _render_nav()
 
 def _render_images(current):
-    img_c, heat_c = st.columns(2)
-    with img_c:
-        st.image(current.bytes, caption="image preview", use_container_width=True)
-    with heat_c:
-        try:
-            st.image(make_heatmap(current.bytes), caption="ELA heatmap", use_container_width=True)
-        except Exception:
-            st.info("heatmap unavailable sorry gng :(")
+    st.image(current.bytes, caption="image preview", use_container_width=True)
 
 def _render_verdict(current):
     pct = int(current.prob_ai * 100)
@@ -31,12 +23,19 @@ def _render_verdict(current):
     st.caption(f"confidence score: {current.confidence * 100:.1f}%")
 
 def _render_nav():
-    prev_c, next_c, _ = st.columns([1, 1, 3])
+    prev_c, next_c, counter_c = st.columns([1, 1, 3])
     with prev_c:
         if st.button("prev", use_container_width=True):
             uploads_state.prev_image()
             st.rerun()
     with next_c:
-        if (st.button("next", use_container_width=True)):
+        if st.button("next", use_container_width=True):
             uploads_state.next_image()
             st.rerun()
+
+    with counter_c:
+        current_num, total = uploads_state.current_position()
+        st.markdown(
+            f"<div class='image-counter'>{current_num}/{total}</div>",
+            unsafe_allow_html=True,
+        )
