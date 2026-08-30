@@ -8,11 +8,12 @@ from eval import evaluate_model
 from fetch_data import DataFetch
 from preprocessing import Preprocessing
 from transformers import AutoModelForZeroShotImageClassification, AutoProcessor
+from frequency_branch import FrequencyBranch
 
-NUM_WORKERS = 2
+NUM_WORKERS = 0
 BATCH_SIZE = 64
-NUM_TRAIN_SAMPLES = 6 #number of images for training
-NUM_VALIDATION_SAMPLES = 2 #number of images for validation
+NUM_TRAIN_SAMPLES = 1000 #number of images for training
+NUM_VALIDATION_SAMPLES = 200 #number of images for validation
 
 def set_up_vit():
     print('loading clip_vit')
@@ -20,8 +21,8 @@ def set_up_vit():
                 device_map="auto", 
                 low_cpu_mem_usage=True)
     image_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    clip_vit.to(device)
+    #device = "cuda" if torch.cuda.is_available() else "cpu"
+    #clip_vit.to(device)
     print('finish loading clip_vit of type ', type(clip_vit))
     return [clip_vit, image_processor]
 
@@ -31,7 +32,8 @@ def main():
     clip_vit, vit_image_processor = set_up_vit()
 
     #instantiate necessary variables
-    branches = [CLIPFeatureBranch(clip_model=clip_vit, image_processor=vit_image_processor)]
+    branches = [CLIPFeatureBranch(clip_model=clip_vit, image_processor=vit_image_processor),
+                FrequencyBranch(output_dim=256)]
     preprocessing = Preprocessing(branches=branches)
     data_fetcher = DataFetch(preprocessing=preprocessing)
     model = FusionModel(branches=branches, num_classes = 2)
