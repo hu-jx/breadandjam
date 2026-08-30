@@ -11,9 +11,6 @@ class WildFakeDataset(Dataset):
         valid_extensions = {".jpg", ".jpeg", ".png", ".webp"}
         self.samples = []
         
-        # Define valid image types
-        valid_extensions = {".jpg", ".jpeg", ".png"}
-        
         # Map directories to labels: Real = 0, Fake = 1
         config = [
             (Path(real_dir), 0),
