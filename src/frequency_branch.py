@@ -30,7 +30,6 @@ class FrequencyBranch(Branch):
             nn.Linear(32 * 4 * 4, output_dim)
         )
 
-    @torch.no_grad()
     def forward(self, inputs):
 
         #apply fourier transform

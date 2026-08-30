@@ -10,24 +10,22 @@ from preprocessing import Preprocessing
 from transformers import AutoModelForZeroShotImageClassification, AutoProcessor
 from frequency_branch import FrequencyBranch
 
-NUM_WORKERS = 0
+NUM_WORKERS = 4
 BATCH_SIZE = 64
 NUM_TRAIN_SAMPLES = 1000 #number of images for training
 NUM_VALIDATION_SAMPLES = 200 #number of images for validation
 
 def set_up_vit():
     print('loading clip_vit')
-    clip_vit = AutoModelForZeroShotImageClassification.from_pretrained("openai/clip-vit-large-patch14", 
-                device_map="auto", 
-                low_cpu_mem_usage=True)
+    clip_vit = AutoModelForZeroShotImageClassification.from_pretrained("openai/clip-vit-large-patch14")
     image_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
-    #device = "cuda" if torch.cuda.is_available() else "cpu"
     #clip_vit.to(device)
     print('finish loading clip_vit of type ', type(clip_vit))
     return [clip_vit, image_processor]
 
 
 def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     #CLIP ViT set-up
     clip_vit, vit_image_processor = set_up_vit()
 
@@ -37,6 +35,7 @@ def main():
     preprocessing = Preprocessing(branches=branches)
     data_fetcher = DataFetch(preprocessing=preprocessing)
     model = FusionModel(branches=branches, num_classes = 2)
+    model = model.to(device)
 
     #create data loaders
     train_data = data_fetcher.fetch_data(num_samples=NUM_TRAIN_SAMPLES,train=True)
@@ -45,6 +44,8 @@ def main():
                               batch_size=BATCH_SIZE, 
                               collate_fn=preprocessing.collate_fn, 
                               num_workers=NUM_WORKERS, 
+                              persistent_workers=True,
+                              pin_memory=True,
                               shuffle=True)
     
     print("RIGHT AFTER TRAIN LOADER")
@@ -53,6 +54,8 @@ def main():
                               batch_size=BATCH_SIZE, 
                               collate_fn=preprocessing.collate_fn, 
                               num_workers=NUM_WORKERS, 
+                              persistent_workers=True,
+                              pin_memory=True,
                               shuffle=False)
     print("RIGHT AFTER test loader")
     
