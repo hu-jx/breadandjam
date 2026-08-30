@@ -42,3 +42,11 @@ def stats():
     flagged = sum(1 for u in uploads if u.verdict == "AI")
     avg_conf = (sum(u.confidence for u in uploads) / total) if total else 0.0
     return {"total": total, "flagged": flagged, "avg_confidence": avg_conf}
+
+def current_position():
+    uploads = all_uploads()
+    if not uploads:
+        return 0, 0
+    
+    index = st.session_state[_IDX_KEY] % len(uploads)
+    return index + 1, len(uploads)
