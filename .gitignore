@@ -218,4 +218,4 @@ __marimo__/
 .streamlit/secrets.toml
 
 #Dataset
-cifake_aligned/train/REAL/*
+src/cifake_aligned/
