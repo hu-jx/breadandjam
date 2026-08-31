@@ -84,7 +84,7 @@ class Preprocessing:
     def collate_fn(batch):
         """Collates pixels and labels for a batch into a singular dictionary (for separate feature branches)
         and their corresponding labels -> Fed into FusionModel for feature extraction"""
-        device = 'mps' if torch.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu') 
+        device = 'mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu') 
         branch_names = batch[0][0].keys() #same branch names for all
         pixel_dict = {}
         #get pixel values

@@ -26,7 +26,7 @@ class Inference:
     def check_entropy_loss(model: FusionModel, val_loader: DataLoader):
         if torch.cuda.is_available():
             model = model.cuda()
-        elif torch.mps.is_available():
+        elif torch.backends.mps.is_available():
             model.to('mps')
         model.eval()
 
