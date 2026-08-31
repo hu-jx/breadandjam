@@ -10,7 +10,7 @@ from utils.utils import to_mps
 from branches.fusion_model import FusionModel
 from  data_loaders.fetch_data import DataFetch
 from  preprocessing.preprocessing import Preprocessing
-from transformers import AutoModelForZeroShotImageClassification, AutoProcessor
+from model_setup import set_up_vit
 from branches.frequency_branch import FrequencyBranch
 import time
 from eval import Inference
@@ -32,18 +32,6 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 torch.mps.manual_seed(SEED)
 
-def set_up_vit():
-    print('loading clip_vit')
-    clip_vit = AutoModelForZeroShotImageClassification.from_pretrained("openai/clip-vit-large-patch14", 
-                device_map="auto", 
-                low_cpu_mem_usage=True)
-    image_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
-    if torch.cuda.is_available():
-        clip_vit.cuda()
-    else:
-        clip_vit.to('cpu')
-    print('finish loading clip_vit of type ', type(clip_vit))
-    return [clip_vit, image_processor]
 
 def save_checkpoint(model: FusionModel, inference: Inference, path:str):
     branch_dims = {}

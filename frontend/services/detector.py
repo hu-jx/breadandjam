@@ -14,7 +14,7 @@ from branches.clip.clip_feature import CLIPFeatureBranch
 from branches.frequency_branch import FrequencyBranch
 from branches.fusion_model import FusionModel
 from preprocessing.preprocessing import Preprocessing
-from train import set_up_vit
+from model_setup import set_up_vit
 from paths import CHECKPOINT_PATH
 
 def _get_device():
