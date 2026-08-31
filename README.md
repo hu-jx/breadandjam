@@ -5,7 +5,7 @@ To start running the script, first install the required dependencies:
 
 1. Terminal
 
-In terminal, run the \`\`\` main.py \`\`\` script using the following CLI command:  
+In terminal, run the ``` main.py ``` script using the following CLI command:  
 ``` python ./src/main.py —image\_dir \<image\_directory\_path\> ```
 
 ## **Problem motivation**
@@ -91,9 +91,9 @@ When first brainstorming the solution, we initially planned to extract features 
 
 | Name | Contribution |
 | :---- | :---- |
-| Jiaxin | Implemented the CLIP feature branch, fixing the initial low ROC\_AUC with AttentionPool Integrated the preprocessing with feature extraction and feature branches with linear classifier head, adding cache dataset methods |
-| Fucheng | Made streamlit dashboard Preprocessing DDA Augment a random subset of the dataset |
-| Arwen | Added frequency branch  Formulated the machine learning pipeline Constructed the README  |
+| Jiaxin | Implemented the CLIP feature branch, fixing the initial low ROC\_AUC with AttentionPool; Integrated the preprocessing with feature extraction and feature branches with linear classifier head; Added cache datasets |
+| Fucheng | Made streamlit dashboard; Preprocessing DDA; Augment a random subset of the dataset |
+| Arwen | Added frequency branch;  Formulated the machine learning pipeline; Constructed the README  |
 
 [^1]:  The best probability threshold was derived using the Youden’s J statistic.
 
