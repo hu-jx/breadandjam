@@ -8,7 +8,7 @@ def render():
     stats = uploads_state.stats()
     all_uploads = uploads_state.all_uploads()
     with st.container(key="summary_bar"):
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3 = st.columns(3)
         with c1:
             render_template("bar_stat", label="total images", value=stats["total"], 
                 accent_class="")
@@ -18,14 +18,6 @@ def render():
                 accent_class="accent")
 
         with c3:
-            render_template(
-                "bar_stat",
-                label="avg confidence",
-                value=f"{stats['avg_confidence'] * 100:.0f}%",
-                accent_class="",
-            )
-
-        with c4:
             if (all_uploads):
                 st.download_button(
                     "download json",

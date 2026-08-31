@@ -66,5 +66,4 @@ def predict(image_bytes: bytes):
         raw_prob = torch.sigmoid(logit).item()
 
     calibrated_prob = calibrator.predict_proba(np.reshape(raw_prob, (1, -1)))[:, 1][0]
-    confidence = abs(calibrated_prob - 0.5) * 2
-    return round(float(calibrated_prob), 3), round(float(confidence), 3)
+    return round(float(calibrated_prob), 3)

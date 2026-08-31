@@ -13,7 +13,7 @@ def render(limit: int = 10):
         _render_row(i, upload)
 
 def _render_row(index, upload):
-    c1, c2, c3, c4, c5 = st.columns([1, 3, 2, 2, 1])
+    c1, c2, c3, c4 = st.columns([1, 3, 2, 1])
     with c1:
         st.image(upload.bytes, width=52)
 
@@ -28,7 +28,4 @@ def _render_row(index, upload):
         st.markdown(f"<span class='{badge}'>{upload.verdict}</span>", unsafe_allow_html=True)
 
     with c4:
-        st.markdown(f"conf · **{upload.confidence * 100:.0f}%**")
-
-    with c5:
         st.button("open", key=f"open_{index}", use_container_width=True)

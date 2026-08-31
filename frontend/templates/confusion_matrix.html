@@ -1,0 +1,28 @@
+<div class="card cm-wrapper">
+    <div class="cm-title">$title</div>
+    <div class="cm-grid">
+        <div class="cm-corner"></div>
+        <div class="cm-col-label">predicted real</div>
+        <div class="cm-col-label">predicted fake</div>
+
+        <div class="cm-row-label">actual real</div>
+        <div class="cm-cell cm-correct">
+            <div class="cm-value">$tn</div>
+            <div class="cm-cell-label">true negative</div>
+        </div>
+        <div class="cm-cell cm-wrong">
+            <div class="cm-value">$fp</div>
+            <div class="cm-cell-label">false positive</div>
+        </div>
+
+        <div class="cm-row-label">actual fake</div>
+        <div class="cm-cell cm-wrong">
+            <div class="cm-value">$fn</div>
+            <div class="cm-cell-label">false negative</div>
+        </div>
+        <div class="cm-cell cm-correct">
+            <div class="cm-value">$tp</div>
+            <div class="cm-cell-label">true positive</div>
+        </div>
+    </div>
+</div>

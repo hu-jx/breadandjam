@@ -20,7 +20,6 @@ def _render_verdict(current):
     pct = int(current.prob_ai * 100)
     st.markdown(f"**{pct}% likely AI-generated**")
     st.progress(current.prob_ai)
-    st.caption(f"confidence score: {current.confidence * 100:.1f}%")
 
 def _render_nav():
     prev_c, next_c, counter_c = st.columns([1, 1, 3])

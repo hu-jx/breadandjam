@@ -5,7 +5,6 @@ class Upload:
     name: str
     bytes: bytes
     prob_ai: float
-    confidence: float
     verdict: str
     timestamp: str
 
