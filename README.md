@@ -1,12 +1,12 @@
 ## **Setup and installation instructions** 
 
 To start running the script, first install the required dependencies:  
-``` pip install \-r requirements.txt ```
+``` pip install -r requirements.txt ```
 
 1. Terminal
 
-In terminal, run the ``` main.py ``` script using the following CLI command:  
-``` python ./src/main.py —image\_dir \<image\_directory\_path\> ```
+In terminal, locate the root directory breadandjam and run the ``` main.py ``` script using the following CLI command:  
+``` python ./src/main.py —image_dir <image_directory_path> ```
 
 ## **Problem motivation**
 
@@ -79,7 +79,7 @@ Accuracy and precision is found to be higher in robust datasets than clean datas
    1. We found a significant overlap between the projected probability distributions of real and fake images, leading to a close-to-1 best probability threshold used[^1]: 0.99476 (5.s.f)  
    2. This could be due to fake images having stronger and much easier-to-detect features, while real images were found to be more heterogenous with no unifying features to detect.   
 2. Runtime limitations   
-   1. VAE reconstruction along with precomputing features may take a relatively long run time on a normal CPU compute
+   1. VAE reconstruction along with precomputing features may take a relatively long run time due to limited compute memory
 
 **Development of idea**
 
@@ -91,7 +91,7 @@ When first brainstorming the solution, we initially planned to extract features 
 
 | Name | Contribution |
 | :---- | :---- |
-| Jiaxin | Implemented the CLIP feature branch, fixing the initial low ROC\_AUC with AttentionPool; Integrated the preprocessing with feature extraction and feature branches with linear classifier head; Added cache datasets |
+| Jiaxin | Implemented the CLIP feature branch and fixed the initial low ROC_AUC with AttentionPool; Integrated the preprocessing with feature extraction and feature branches with linear classifier head; Added cache datasets |
 | Fucheng | Made streamlit dashboard; Preprocessing DDA; Augment a random subset of the dataset |
 | Arwen | Added frequency branch;  Formulated the machine learning pipeline; Constructed the README  |
 
