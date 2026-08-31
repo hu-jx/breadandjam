@@ -41,7 +41,7 @@ def load_model():
     if calibrator is None:
         raise RuntimeError('Calibrator not found')
     
-    if torch.mps.is_available():
+    if torch.backends.mps.is_available():
         model.to(device)
     model.eval()
 
