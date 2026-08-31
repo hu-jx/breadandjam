@@ -8,11 +8,9 @@ from  preprocessing.preprocessing import Preprocessing
 from torchvision import datasets
 from torch.utils.data import Dataset, Subset
 import random
+from paths import ALIGNED_TRAIN_PATH, AIGC_OUT_DIR, NON_AIGC_OUT_DIR
 
 path = kagglehub.dataset_download("birdy654/cifake-real-and-ai-generated-synthetic-images")
-ALIGNED_TRAIN_PATH = "cifake_aligned/train"
-AIGC_OUT_DIR = "./wildfake_subset/AIGC"
-NON_AIGC_OUT_DIR = "./wildfake_subset/Non-AIGC"
 
 def ensure_aligned_dataset():
     if os.path.isdir(f"{ALIGNED_TRAIN_PATH}/REAL") and os.path.isdir(f"{ALIGNED_TRAIN_PATH}/FAKE"):

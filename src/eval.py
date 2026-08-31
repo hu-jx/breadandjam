@@ -84,7 +84,7 @@ class Inference:
 
     def fit_calibrator(self, val_loader):
         """Fit calibrator with the validation set"""
-        val_probs, val_true_labels, val_pred_labels= self._get_probs(val_loader)
+        val_probs, val_pred_labels, val_true_labels = self._get_probs(val_loader)
         val_probs = np.reshape(val_probs, (-1, 1)).tolist()
         self.calibrator = LogisticRegression()
         self.calibrator.fit(val_probs, val_true_labels)

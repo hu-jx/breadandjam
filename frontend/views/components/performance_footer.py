@@ -1,10 +1,9 @@
 from views.helpers import render as render_template
 
 _METRICS = {
-    "accuracy":   "1000% trust",
-    "robustness": "100%",
-    "speed":      "1 ms",
-    "last_eval":  "2026-08-24",
+    "accuracy":   "72.8%",
+    "robustness": "81.9%",
+    "last_eval":  "2026-08-31",
 }
 
 def render():

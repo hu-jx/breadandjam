@@ -5,7 +5,8 @@ import numpy as np
 import torch
 from PIL import Image
 from branches.frequency_branch import FrequencyBranch
-from train import set_up_vit, train_model
+from train import train_model
+from model_setup import set_up_vit
 from branches.clip.clip_feature import CLIPFeatureBranch
 from preprocessing.preprocessing import Preprocessing
 from branches.fusion_model import FusionModel

@@ -10,17 +10,17 @@ from utils.utils import to_mps
 from branches.fusion_model import FusionModel
 from  data_loaders.fetch_data import DataFetch
 from  preprocessing.preprocessing import Preprocessing
-from transformers import AutoModelForZeroShotImageClassification, AutoProcessor
+from model_setup import set_up_vit
 from branches.frequency_branch import FrequencyBranch
 import time
 from eval import Inference
+from paths import CHECKPOINT_PATH, TRAIN_FEATS_PATH, VAL_FEATS_PATH, TEST_FEATS_PATH, TEST_ROBUST_FEATS_PATH
 
 NUM_WORKERS = 0
 BATCH_SIZE = 64
 NUM_TRAIN_SAMPLES_PER_CLASS = 1000 #number of images for training
 NUM_TEST_SAMPLES_PER_CLASS = 200 # number of images for testin
 NUM_VALIDATION_SAMPLES_PER_CLASS = 200 #number of images for validation
-CHECKPOINT_PATH = "checkpoint.pt"
 import torch
 import numpy as np
 import random
@@ -32,18 +32,6 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 torch.mps.manual_seed(SEED)
 
-def set_up_vit():
-    print('loading clip_vit')
-    clip_vit = AutoModelForZeroShotImageClassification.from_pretrained("openai/clip-vit-large-patch14", 
-                device_map="auto", 
-                low_cpu_mem_usage=True)
-    image_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
-    if torch.cuda.is_available():
-        clip_vit.cuda()
-    else:
-        clip_vit.to('cpu')
-    print('finish loading clip_vit of type ', type(clip_vit))
-    return [clip_vit, image_processor]
 
 def save_checkpoint(model: FusionModel, inference: Inference, path:str):
     branch_dims = {}
@@ -125,22 +113,22 @@ def train_model():
     test_robust = data_fetcher.fetch_data(num_samples=NUM_TEST_SAMPLES_PER_CLASS, test=True, test_robust=True, 
                                         start_n = NUM_VALIDATION_SAMPLES_PER_CLASS)
 
-    precompute_features(model, preprocessing, train_raw, device, "train_feats.pt")
+    precompute_features(model, preprocessing, train_raw, device, TRAIN_FEATS_PATH)
     print('pc1')
-    precompute_features(model, preprocessing, val_raw,   device, "val_feats.pt")
+    precompute_features(model, preprocessing, val_raw,   device, VAL_FEATS_PATH)
     print('pc2')
-    precompute_features(model, preprocessing, test_raw,  device, "test_feats.pt")
+    precompute_features(model, preprocessing, test_raw,  device, TEST_FEATS_PATH)
     print('pc3')
-    precompute_features(model, preprocessing, test_robust, device, "test_robust_feats.pt")
+    precompute_features(model, preprocessing, test_robust, device, TEST_ROBUST_FEATS_PATH)
     # --- fast cached loaders ---
-    train_loader = DataLoader(CachedFeatureDataset("train_feats.pt"), batch_size=BATCH_SIZE,
+    train_loader = DataLoader(CachedFeatureDataset(TRAIN_FEATS_PATH), batch_size=BATCH_SIZE,
                                collate_fn=cached_collate_fn, shuffle=True)
     
-    val_loader   = DataLoader(CachedFeatureDataset("val_feats.pt"), batch_size=BATCH_SIZE,
+    val_loader   = DataLoader(CachedFeatureDataset(VAL_FEATS_PATH), batch_size=BATCH_SIZE,
                                collate_fn=cached_collate_fn, shuffle=False)
-    test_loader  = DataLoader(CachedFeatureDataset("test_feats.pt"), batch_size=BATCH_SIZE,
+    test_loader  = DataLoader(CachedFeatureDataset(TEST_FEATS_PATH), batch_size=BATCH_SIZE,
                                collate_fn=cached_collate_fn, shuffle=False)
-    test_robust_loader = DataLoader(CachedFeatureDataset("test_robust_feats.pt"), batch_size=BATCH_SIZE,
+    test_robust_loader = DataLoader(CachedFeatureDataset(TEST_ROBUST_FEATS_PATH), batch_size=BATCH_SIZE,
                                collate_fn=cached_collate_fn, shuffle=False)
     # #create training reqs 
     optimizer = torch.optim.Adam(

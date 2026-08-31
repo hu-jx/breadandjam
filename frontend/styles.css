@@ -263,7 +263,7 @@ section[data-testid="stSidebar"] .stButton button:hover {
     min-height: 280px;
 }
 
-.st-key-upload_square [data-testid="stFileUploaderDropzone"] * {
+.st-key-upload_square [data-testid="stFileUploaderDropzone"] :not(button, button *) {
     color: #FFFFFF !important;
 }
 
@@ -343,7 +343,7 @@ section[data-testid="stSidebar"] .stButton button:hover {
 
 .perf-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
 }
 
@@ -400,4 +400,73 @@ section[data-testid="stSidebar"] .stButton button:hover {
 .st-key-predict_square [data-testid="stCaptionContainer"] {
     color: black !important;
     font-weight: bold;
+}
+
+.cm-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #14142B;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.cm-grid {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.cm-col-label,
+.cm-row-label {
+    color: #6b6b7d;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.cm-col-label {
+    text-align: center;
+}
+
+.cm-row-label {
+    text-align: right;
+    padding-right: 0.5rem;
+    white-space: nowrap;
+}
+
+.cm-cell {
+    border-radius: 14px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.cm-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.cm-cell-label {
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cm-correct {
+    background: #E1F5E7;
+}
+
+.cm-correct .cm-value,
+.cm-correct .cm-cell-label {
+    color: #2E7D4F;
+}
+
+.cm-wrong {
+    background: #FFE1E4;
+}
+
+.cm-wrong .cm-value,
+.cm-wrong .cm-cell-label {
+    color: #C6304F;
 }

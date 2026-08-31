@@ -12,9 +12,9 @@ def load_css(filename: str = "styles.css"):
 
 def render(template_name: str, **fields):
     path = _TEMPLATES / f"{template_name}.html"
-    raw = dedent(path.read_text()).strip()
+    raw = path.read_text()
     html = Template(raw).safe_substitute(**fields)
-    st.markdown(html, unsafe_allow_html=True)
+    st.html(html)
 
 def spacer(size: str = "md"):
     st.markdown(f"<div class='spacer-{size}'></div>", unsafe_allow_html=True)

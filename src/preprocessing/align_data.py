@@ -21,7 +21,8 @@ def get_vae():
 @torch.no_grad()
 def vae_reconstruct(img):
     vae = get_vae()
-    x = to_tensor(img).unsqueeze(0).to('mps' if torch.backends.mps.is_available() else 'cpu') * 2 - 1
+    device = 'mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu')
+    x = to_tensor(img).unsqueeze(0).to(device) * 2 - 1
     latent = vae.encode(x).latent_dist.mode()
     recon = (vae.decode(latent).sample.clamp(-1, 1) + 1) / 2
     return to_pil(recon.squeeze(0))

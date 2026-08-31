@@ -12,6 +12,7 @@ def render():
             label_visibility="collapsed",
         )
         if (files):
-            handle_new_files(files)
+            with st.spinner("analyzing image(s)..."):
+                handle_new_files(files)
 
         st.caption(f"{len(uploads_state.all_uploads())} image(s) in session")

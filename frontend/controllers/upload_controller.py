@@ -10,12 +10,11 @@ def handle_new_files(files: Iterable):
             continue
 
         image_bytes = f.getvalue()
-        prob_ai, confidence = detector.predict(image_bytes)
+        prob_ai = detector.predict(image_bytes)
         upload = Upload(
             name=f.name,
             bytes=image_bytes,
             prob_ai=prob_ai,
-            confidence=confidence,
             verdict="AI" if prob_ai > 0.5 else "Human",
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )

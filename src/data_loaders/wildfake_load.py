@@ -1,3 +1,4 @@
+from paths import WILDFAKE_ZIPS_DIR
 from modelscope.hub.api import HubApi
 api = HubApi()
 DALLE_ZIP_PATH = "Images/Diffusion_based/DALLE.zip"
@@ -25,23 +26,21 @@ def load_wildfake_data(real_dir:str, fake_dir: str):
     if os.path.isdir(real_dir) and os.path.isdir(fake_dir):
         return
     dataset_snapshot_download(
-    dataset_id="hy2628982280/WildFake",
-    allow_patterns=[
-        "Images/Real/coco.zip",
-        "Images/Diffusion_based/DALLE.zip",
-    ],
-    local_dir="./wildfake_zips"
-    )
+        dataset_id="hy2628982280/WildFake",
+        allow_patterns=["Images/Real/coco.zip",
+            "Images/Diffusion_based/DALLE.zip",],
+        local_dir=WILDFAKE_ZIPS_DIR
+    )   
 
     extract_matching(
-        "./wildfake_zips/Images/Real/coco.zip",
+        f"{WILDFAKE_ZIPS_DIR}/Images/Real/coco.zip",
         "val2017",
         real_dir
     )
 
     extract_matching(
-        "./wildfake_zips/Images/Diffusion_based/DALLE.zip",
-        "Advanced",  # adjust once step 2 shows the real subfolder name
+        f"{WILDFAKE_ZIPS_DIR}/Images/Diffusion_based/DALLE.zip",
+        "Advanced",
         fake_dir
     )
 
