@@ -263,7 +263,7 @@ section[data-testid="stSidebar"] .stButton button:hover {
     min-height: 280px;
 }
 
-.st-key-upload_square [data-testid="stFileUploaderDropzone"] * {
+.st-key-upload_square [data-testid="stFileUploaderDropzone"] :not(button, button *) {
     color: #FFFFFF !important;
 }
 

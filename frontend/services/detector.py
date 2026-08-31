@@ -1,5 +1,10 @@
-import io
+import sys
 from pathlib import Path
+SRC_PATH = Path(__file__).resolve().parent.parent.parent / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+    
+import io
 import numpy as np
 import torch
 import streamlit as st
@@ -10,8 +15,7 @@ from branches.frequency_branch import FrequencyBranch
 from branches.fusion_model import FusionModel
 from preprocessing.preprocessing import Preprocessing
 from train import set_up_vit
-
-CHECKPOINT_PATH = "checkpoint.pt"
+from paths import CHECKPOINT_PATH
 
 def _get_device():
     if torch.mps.is_available():

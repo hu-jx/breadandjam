@@ -220,3 +220,4 @@ __marimo__/
 #Dataset
 src/cifake_aligned/
 src/wildfake_zips
+src/wildfake_subset
