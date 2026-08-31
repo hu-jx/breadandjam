@@ -33,20 +33,32 @@ torch.manual_seed(SEED)
 torch.mps.manual_seed(SEED)
 
 
-def save_checkpoint(model: FusionModel, inference: Inference, path:str):
+def save_checkpoint(model: FusionModel, inference: Inference, path: str):
     branch_dims = {}
     freq_branch = None
+    clip_branch = None
     for branch in model.branches:
-        if not (isinstance(branch, Branch)):
-            raise TypeError('Expected instance of Branch but got ', type(branch))
+        if not isinstance(branch, Branch):
+            raise TypeError(
+                'Expected instance of Branch but got ',
+                type(branch)
+            )
+        
         branch_dims[branch.get_name()] = branch.get_dim()
-        freq_branch = branch if branch.get_name() == 'frequency' else freq_branch
+        if branch.get_name() == 'frequency':
+            freq_branch = branch
+        elif branch.get_name() == 'clip':
+            clip_branch = branch
 
-    if not freq_branch:
+    if freq_branch is None:
         raise RuntimeError('Frequency branch is not found')
-    
+
+    if clip_branch is None:
+        raise RuntimeError('CLIP branch is not found')
+
     torch.save({
         'freq_state': freq_branch.state_dict(),
+        'pool_state': clip_branch.pool.state_dict(),
         'head_state': model.classifier_head.state_dict(),
         'branch_dims': branch_dims,
         'calibrator': inference.calibrator
