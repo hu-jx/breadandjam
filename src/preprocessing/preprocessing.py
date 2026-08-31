@@ -1,11 +1,13 @@
 # from torchvision import transforms
 import torch
-from branch import Branch
+from branches.branch import Branch
 from typing import Sequence
 import random
 import albumentations as A
 import numpy as np
 from PIL import Image
+
+from utils.utils import to_mps
 
 LABELS = {
     'FAKE': 1,
@@ -58,7 +60,7 @@ class Preprocessing:
         
         return img
 
-    def full_transform(self, img, train):
+    def full_transform(self, img, train, test_robust=False):
         """Creates a pixels dictionary for a singular image, img, with specific pixels
         for different branches since different branches need diff data transforms:
         Access output via pixels[branch_name]"""
@@ -66,7 +68,7 @@ class Preprocessing:
         #takes in the img, and a list of methods to execute,  
         img = img.convert("RGB")
         # (done!) put dda here -> done for a singular image before putting through branches' trf 
-        if train:
+        if train or test_robust:
             img = self.augment(img)
         pixels = {}
         for branch in self.branches:
@@ -82,10 +84,14 @@ class Preprocessing:
     def collate_fn(batch):
         """Collates pixels and labels for a batch into a singular dictionary (for separate feature branches)
         and their corresponding labels -> Fed into FusionModel for feature extraction"""
+        device = 'mps' if torch.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu') 
         branch_names = batch[0][0].keys() #same branch names for all
         pixel_dict = {}
         #get pixel values
         for branch in branch_names:
             pixel_dict[branch] = torch.stack([b[0][branch] for b in batch])
         labels = torch.tensor([b[LABEL_INDEX] for b in batch], dtype=torch.float32)
+        pixel_dict, labels = to_mps(pixel_dict, labels)
         return pixel_dict, labels
+     
+    

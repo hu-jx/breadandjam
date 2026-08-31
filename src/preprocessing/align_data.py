@@ -11,13 +11,17 @@ def get_vae():
     if _vae is None:
         from diffusers.models.autoencoders.autoencoder_kl import AutoencoderKL
         _vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae")
+        if torch.mps.is_available():
+            _vae.to("mps")
+        elif torch.cuda.is_available():
+            _vae.cuda()
         _vae.eval()
     return _vae
 
 @torch.no_grad()
 def vae_reconstruct(img):
     vae = get_vae()
-    x = to_tensor(img).unsqueeze(0) * 2 - 1
+    x = to_tensor(img).unsqueeze(0).to('mps' if torch.mps.is_available else 'cpu') * 2 - 1
     latent = vae.encode(x).latent_dist.mode()
     recon = (vae.decode(latent).sample.clamp(-1, 1) + 1) / 2
     return to_pil(recon.squeeze(0))
