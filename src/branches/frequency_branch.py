@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms 
 from PIL import Image
-from branch import Branch 
+from branches.branch import Branch
+from branches.safe_adaptive_2d import SafeAdaptiveAvgPool2d 
 
 class FrequencyBranch(Branch):
     def __init__(self, output_dim=256, target_size=(224, 224)):
@@ -25,7 +26,7 @@ class FrequencyBranch(Branch):
             nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.AdaptiveAvgPool2d((4, 4)),
+            SafeAdaptiveAvgPool2d((4, 4)),
             nn.Flatten(),
             nn.Linear(32 * 4 * 4, output_dim)
         )
@@ -50,6 +51,6 @@ class FrequencyBranch(Branch):
 
     def transform_data(self, img: Image.Image) -> torch.Tensor:
         return self.transform(img)
-
+    
     
 

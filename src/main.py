@@ -1,130 +1,124 @@
-#python code for backend / model training in this folder
+import argparse
+import json
+from pathlib import Path
+import numpy as np
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from clip_feature import CLIPFeatureBranch
-from branch import Branch
-from utils.utils import to_device
-from fusion_model import FusionModel
-from eval import check_entropy_loss, run_inference
-from fetch_data import DataFetch
-from preprocessing import Preprocessing
-from transformers import AutoModelForZeroShotImageClassification, AutoProcessor
-from frequency_branch import FrequencyBranch
+from PIL import Image
+from branches.frequency_branch import FrequencyBranch
+from train import set_up_vit, train_model
+from branches.clip.clip_feature import CLIPFeatureBranch
+from preprocessing.preprocessing import Preprocessing
+from branches.fusion_model import FusionModel
+from branches.branch import Branch
+import sklearn.isotonic
 
-NUM_WORKERS = 0
-BATCH_SIZE = 64
-NUM_TRAIN_SAMPLES = 100 #number of images for training
-NUM_TEST_SAMPLES = 20
-NUM_VALIDATION_SAMPLES = 20 #number of images for validation
+
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
 CHECKPOINT_PATH = "checkpoint.pt"
+OUTPUT_PATH = "predictions.json"
+BATCH_SIZE = 32
 
-def set_up_vit():
-    print('loading clip_vit')
-    clip_vit = AutoModelForZeroShotImageClassification.from_pretrained("openai/clip-vit-large-patch14", 
-                device_map="auto", 
-                low_cpu_mem_usage=True)
-    image_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
-    #device = "cuda" if torch.cuda.is_available() else "cpu"
-    #clip_vit.to(device)
-    print('finish loading clip_vit of type ', type(clip_vit))
-    return [clip_vit, image_processor]
+def load_model():
+    if not Path(CHECKPOINT_PATH).exists():
+        print("Could not find loaded model. Retraining now...")
+        train_model()
 
-def save_checkpoint(model: FusionModel, path: str):
-    branch_dims = {}
-    for branch in model.branches:
-        if not (isinstance(branch, Branch)):
-            raise TypeError('Expected instance of Branch but got ', type(branch))
-        branch_dims[branch.get_name()] = branch.get_dim()
-
-    torch.save({
-        # extract feature branch parameters with .state_dict()
-        'head_state': model.classifier_head.state_dict(),
-        'branch_dims': branch_dims,
-    }, path)
-
-def train():
-    #CLIP ViT set-up
-    clip_vit, vit_image_processor = set_up_vit()
-
-    #instantiate necessary variables
-    branches = [CLIPFeatureBranch(clip_model=clip_vit, image_processor=vit_image_processor),
-                FrequencyBranch(output_dim=256)]
+    torch.serialization.add_safe_globals([sklearn.isotonic.IsotonicRegression])
+    if torch.cuda.is_available(): 
+        device = "cuda" 
+    else:
+        device = "cpu"
+    clip_vit, image_processor = set_up_vit()
+    freq_branch = FrequencyBranch()
+    branches = [CLIPFeatureBranch(clip_vit, image_processor=image_processor), freq_branch]
+    model = FusionModel(branches=branches, num_classes=1)
     preprocessing = Preprocessing(branches=branches)
-    data_fetcher = DataFetch(preprocessing=preprocessing)
-    model = FusionModel(branches=branches, num_classes = 1)
-
-    #create data loaders
-    train_data = data_fetcher.fetch_data(num_samples=NUM_TRAIN_SAMPLES,train=True)
-    print("RIGHT BEFORE TRAIN LOADER")
-    train_loader = DataLoader(dataset=train_data, 
-                              batch_size=BATCH_SIZE, 
-                              collate_fn=preprocessing.collate_fn, 
-                              num_workers=NUM_WORKERS, 
-                              shuffle=True)
-    print("RIGHT AFTER TRAIN LOADER")
-
-    val_data = data_fetcher.fetch_data(num_samples=NUM_VALIDATION_SAMPLES, val=True)
-    val_loader = DataLoader(dataset=val_data, 
-                              batch_size=BATCH_SIZE, 
-                              collate_fn=preprocessing.collate_fn, 
-                              num_workers=NUM_WORKERS, 
-                              shuffle=False)
-    print("RIGHT AFTER val loader")
-
-    print("TEST LOADER")
-    test_data = data_fetcher.fetch_data(num_samples=NUM_TEST_SAMPLES, test=True)
-    test_loader = DataLoader(dataset=val_data, 
-                              batch_size=BATCH_SIZE, 
-                              collate_fn=preprocessing.collate_fn, 
-                              num_workers=NUM_WORKERS, 
-                              shuffle=False)
     
-    #create training reqs 
-    optimizer = torch.optim.Adam(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=1e-4  # smaller LR than training from scratch, since we're fine-tuning pretrained weights
-    )
-    print("RIGHT AFTER optimizer")
-    criterion = nn.BCEWithLogitsLoss()
-    print("RIGHT AFTER criterion")
-
-    #create loss lists
-    loss_per_epoch_val = []
-    loss_per_epoch_train = []
-
-    #feature extraction & training loop
-    for epoch in range(5): 
-        model.train()
-        total_loss = 0 
-        print("BEFORE INNER LOOP AT", epoch)
-        for i, [pixel_dict, labels] in enumerate(train_loader):
-            print("batch", i)
-            #refactor 
-            labels = labels.unsqueeze(1).float() 
-            pixel_dict, labels = to_device(pixel_dict, labels)
-
-            outputs = model(pixel_dict) #predict
-            loss = criterion(outputs, labels) #error / likelihood of wrong
-            loss.backward() #accumulate gradients
-            optimizer.step() #adjust model weights
-
-            total_loss += loss.item()
-            optimizer.zero_grad() #reset grad acc
-            print("END for  batch with total loss ", total_loss)
-
-        avg_loss = total_loss/len(train_loader)
-        print(f"Epoch {epoch+1}, train loss: {avg_loss:.4f}")
-        loss_per_epoch_train.append(total_loss)
-        avg_loss_val = check_entropy_loss(model, val_loader=val_loader)
-        loss_per_epoch_val.append(avg_loss_val)
+    checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=False)
+    freq_branch.load_state_dict(checkpoint['freq_state'])
+    model.classifier_head.load_state_dict(checkpoint['head_state'])
+    calibrator = checkpoint['calibrator']
+    if calibrator is None:
+        raise RuntimeError('Calibrator not found')
     
-    print("Validation loss per epoch:", loss_per_epoch_val, 
-          "Training loss per epoch:", loss_per_epoch_train)
-    roc_auc, cm = run_inference(model=model, test_loader=test_loader)
-    print("ROC_AUC_clean:" ,roc_auc)
-    print("Confusion matrix", cm)
-    save_checkpoint(model, path = CHECKPOINT_PATH) #save model to a checkpoint path
+    if torch.mps.is_available():
+        model.to(device)
+    model.eval()
 
-if __name__ == '__main__':
-    train()
+    return model, preprocessing, device, calibrator
+
+def collect_image_paths(directory: Path) -> list[Path]:
+    return [p for p in sorted(directory.rglob('*')) if p.suffix.lower() in IMAGE_EXTENSIONS]
+
+#For input images
+@torch.no_grad()
+def run_batch(model: FusionModel, preprocessing: Preprocessing, device: str, image_paths: list[Path], calibrator):
+    predicted_res = []
+
+    for i in range(0, len(image_paths), BATCH_SIZE):
+        batch_paths = image_paths[i:i + BATCH_SIZE]
+
+        samples = []
+        valid_paths = []
+
+        #preprocess manually bec might not fit dataloader requirements
+        for path in batch_paths:
+            try:
+                img = Image.open(path)
+                img = img.convert('RGB')
+                samples.append(preprocessing.full_transform(img, False))
+                valid_paths.append(path)
+            except Exception as e:
+                print(f"Skipping {path}: {e}")
+
+        if not samples:
+            continue
+
+        pixel_dict = {}
+        for branch in model.branches:
+            if not isinstance(branch, Branch):
+                raise TypeError('Expected instance of Branch but got ', type(branch))
+            branch_name = branch.get_name()
+            pixel_dict[branch_name] = torch.stack(
+                [sample[branch_name] for sample in samples]
+            ).to(device)
+
+        logits = model(pixel_dict)
+        probs_fake = torch.sigmoid(logits)
+
+        for i in range(probs_fake.size(0)):
+            raw_prob = probs_fake[i].item()
+            calibrated_prob = calibrator.predict_proba(np.reshape(raw_prob, (1, -1)))[:,1][0]
+            print(calibrated_prob, type(calibrated_prob)) #Uses calibrated LogisticRegression
+            predicted_res.append({
+                "image_path": str(valid_paths[i]),
+                "pred": round(calibrated_prob, 4),
+            })
+    
+    return predicted_res
+
+def main():
+    #takes in via CLI image directory
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--image_dir", type=str, help="Directory of images to score")
+    args = parser.parse_args()
+    if not args:
+        raise Exception('No image directory found')
+
+    model, preprocessing, device, calibrator = load_model()
+    image_paths = collect_image_paths(Path(args.image_dir))
+
+    if not image_paths:
+        print(f"No images found in {args.image_dir}")
+        return
+
+    print(f"Found {len(image_paths)} images. Running predictions...")
+    results = run_batch(model, preprocessing, device, image_paths, calibrator)
+
+    with open("output.json", "w") as json_file:
+        json.dump(results, json_file, indent=4)
+
+    print(f"Wrote {len(results)} predictions to json file")
+
+if __name__ == "__main__":
+    main()
