@@ -94,7 +94,7 @@ def train_model():
     start_time = time.perf_counter()
     #CLIP ViT set-up
     clip_vit, vit_image_processor = set_up_vit()
-    device = 'mps' if torch.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu')
+    device = 'mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu')
 
     #instantiate necessary variables
     branches = [CLIPFeatureBranch(clip_model=clip_vit, image_processor=vit_image_processor),
@@ -102,7 +102,7 @@ def train_model():
     preprocessing = Preprocessing(branches=branches)
     data_fetcher = DataFetch(preprocessing=preprocessing)
     model = FusionModel(branches=branches, num_classes = 1)
-    if torch.mps.is_available():
+    if torch.backends.mps.is_available():
         model.to(device)
 
     # # --- one-time feature caching ---
