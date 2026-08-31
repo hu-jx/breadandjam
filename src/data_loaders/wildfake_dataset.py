@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 class WildFakeDataset(Dataset):
-    def __init__(self, num_samples: int, real_dir, fake_dir, transform=None):
+    def __init__(self, num_samples: int, real_dir, fake_dir, start_n: int, transform=None):
         super().__init__()
         self.num_samples = num_samples
         self.transform = transform
@@ -19,13 +19,17 @@ class WildFakeDataset(Dataset):
         
         # Scan directories and pair paths with labels
         for folder_path, label in config:
-            count = 0
-            for p in folder_path.rglob("*"):
-                if num_samples is not None and count >= num_samples:
-                    break
-                if p.suffix.lower() in valid_extensions:
-                    self.samples.append((p, label))
-                    count+=1
+        # collect all valid files first, sorted for reproducibility
+            all_files = sorted(
+            p for p in folder_path.rglob("*")
+            if p.suffix.lower() in valid_extensions
+            )
+
+        # slice out the window you want
+            selected = all_files[start_n : start_n + num_samples] if num_samples is not None else all_files[start_n:]
+
+            for p in selected:
+                self.samples.append((p, label))
 
         self.implemented = True
     
