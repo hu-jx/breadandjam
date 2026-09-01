@@ -76,10 +76,11 @@ Accuracy and precision is found to be higher in robust datasets than clean datas
 **Limitations**
 
 1. Significant skew towards predicting positive (i.e. predicting to be fake)   
-   1. We found a significant overlap between the projected probability distributions of real and fake images, leading to a close-to-1 best probability threshold used[^1]: 0.99476 (5.s.f)  
-   2. This could be due to fake images having stronger and much easier-to-detect features, while real images were found to be more heterogenous with no unifying features to detect.   
+   1. We found a significant overlap between the projected probability distributions of real and fake images, leading to a close-to-1 best probability threshold used [^1]: 0.99476 (5.s.f). In a bid to resolve this, a calibrator (LogisticRegression) was added. However, due to the very small float value differences between real and fake images' raw predicted probabilities, the calibrator becomes weak in discerning, leading to similar probability distributions around 0.5 instead. This means that predicted probabilities all congregate around 0.5
+   2. This could be due to fake images having stronger and much easier-to-detect features, while real images were found to be more heterogenous with no unifying features to detect.
+   3. With more more time, we could look into other calibrations methods. More importantly, with more time, we could inspect the reasons why the projected probability distributions of real and fake images are overlapping significantly and add the necessary additional signals such that the model is able to recognise between real and fake better. 
 2. Runtime limitations   
-   1. VAE reconstruction along with precomputing features may take a relatively long run time due to limited compute memory
+   1. VAE reconstruction along with precomputing features may take a relatively long run time due to limited compute memory. 
 
 **Development of idea**
 
@@ -91,7 +92,7 @@ When first brainstorming the solution, we initially planned to extract features 
 
 | Name | Contribution |
 | :---- | :---- |
-| Jiaxin | Implemented the CLIP feature branch and fixed the initial low ROC_AUC with AttentionPool; Integrated the preprocessing with feature extraction and feature branches with linear classifier head; Added cache datasets |
+| Jiaxin | Implemented the CLIP feature branch and fixed the initial low ROC_AUC with AttentionPool; Integrated the preprocessing, feature branches with linear classifier head; Added cache datasets |
 | Fucheng | Made streamlit dashboard; Preprocessing DDA; Augment a random subset of the dataset |
 | Arwen | Added frequency branch;  Formulated the machine learning pipeline; Constructed the README  |
 
