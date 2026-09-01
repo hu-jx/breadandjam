@@ -222,3 +222,7 @@ src/cifake_aligned/
 src/wildfake_zips
 src/wildfake_subset
 src/checkpoint.pt
+src/val_feats.pt
+src/train_feats.pt
+src/test_feats.pt
+src/test_robust_feats.pt

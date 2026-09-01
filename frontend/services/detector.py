@@ -36,11 +36,21 @@ def load_model():
     device = _get_device()
     clip_vit, image_processor = set_up_vit()
     freq_branch = FrequencyBranch()
-    branches = [CLIPFeatureBranch(clip_vit, image_processor=image_processor), freq_branch]
+    clip_branch = CLIPFeatureBranch(
+        clip_vit,
+        image_processor=image_processor
+    )
+    freq_branch = FrequencyBranch()
+    branches = [clip_branch, freq_branch]
     model = FusionModel(branches=branches, num_classes=1)
     preprocessing = Preprocessing(branches=branches)
-    checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=False)
+    checkpoint = torch.load(
+        CHECKPOINT_PATH,
+        map_location="cpu",
+        weights_only=False
+    )
     freq_branch.load_state_dict(checkpoint['freq_state'])
+    clip_branch.pool.load_state_dict(checkpoint['pool_state'])
     model.classifier_head.load_state_dict(checkpoint['head_state'])
     calibrator = checkpoint['calibrator']
     if calibrator is None:
@@ -66,4 +76,10 @@ def predict(image_bytes: bytes):
         raw_prob = torch.sigmoid(logit).item()
 
     calibrated_prob = calibrator.predict_proba(np.reshape(raw_prob, (1, -1)))[:, 1][0]
-    return round(float(calibrated_prob), 3)
+    print(
+        "RAW:",
+        raw_prob,
+        "CALIBRATED:",
+        float(calibrated_prob)
+    )
+    return float(calibrated_prob)
