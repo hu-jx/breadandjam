@@ -12,10 +12,10 @@ from preprocessing.preprocessing import Preprocessing
 from branches.fusion_model import FusionModel
 from branches.branch import Branch
 import sklearn.isotonic
+from paths import CHECKPOINT_PATH
 
 
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
-CHECKPOINT_PATH = "checkpoint.pt"
 OUTPUT_PATH = "predictions.json"
 BATCH_SIZE = 32
 
